@@ -13,6 +13,8 @@
 
 [内存管理](./os/内存管理.md)
 
+[Linux基础](./os/Linux基础.md)
+
 ## Java
 
 ### Java 基础
@@ -25,7 +27,7 @@
 
 [设计模式](./java/java基础/设计模式.md)
 
-## JVM
+### JVM
 
 [运行时数据区](./java/jvm/运行时数据区.md)
 
@@ -39,7 +41,7 @@
 
 [synchronized锁升级过程](./java/jvm/synchronized锁升级过程.md)
 
-## Spring
+### Spring
 
 [IOC特性](./java/Spring/IOC特性.md)
 
@@ -51,11 +53,11 @@
 
 ## MySQL
 
+[日志](./mysql/日志.md)
+
 [事务](./mysql/事务.md)
 
 [索引](./mysql/索引.md)
-
-[SQL查询优化](./mysql/SQL查询优化.md)
 
 [集群相关](./mysql/集群相关.md)
 
