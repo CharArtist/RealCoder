@@ -43,9 +43,7 @@
 
 ### Spring
 
-[IOC特性](./java/Spring/IOC特性.md)
-
-[AOP特性](./java/Spring/AOP特性.md)
+[AOP特性](./java/Spring/AOP与依赖注入.md)
 
 [Bean相关特性](./java/Spring/Bean相关特性.md)
 
