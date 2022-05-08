@@ -29,21 +29,15 @@
 
 ### JVM
 
-[运行时数据区](./java/jvm/运行时数据区.md)
+[垃圾回收](./java/jvm/垃圾回收.md)
 
-[垃圾收集](./java/jvm/垃圾收集.md)
-
-[对象引用](./java/jvm/对象引用.md)
-
-[对象创建过程](./java/jvm/对象创建过程.md)
-
-[类加载过程](./java/jvm/类加载过程.md)
+[类和对象相关](./java/jvm/类和对象相关.md)
 
 [synchronized锁升级过程](./java/jvm/synchronized锁升级过程.md)
 
 ### Spring
 
-[AOP特性](./java/Spring/AOP与依赖注入.md)
+[AOP与依赖注入](./java/Spring/AOP与依赖注入.md)
 
 [Bean相关特性](./java/Spring/Bean相关特性.md)
 
