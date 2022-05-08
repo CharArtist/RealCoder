@@ -114,3 +114,32 @@ destroy exec, bye...
 
 ## 解决循环依赖
 
+一个最简单的包含循环依赖的代码：
+
+```java
+@Component
+public class A {
+  @Autowired
+  private B b;
+  public void setB(B b) {
+    this.b = b;
+  }
+}
+
+@Component
+public class B {
+  @Autowired
+  private A a;
+  public void setA(A a) {
+    this.a = a;
+  }
+}
+```
+
+以创建 A 对象为例，Spring 解决循环依赖的过程大致如下图：
+
+<img src="../../image/image-20220508173413358.png" alt="image-20220508173413358" style="zoom:80%;" />
+
+简言之，两个池子：一个成品池子，一个半成品池子。能解决循环依赖的前提是：spring 开启了allowCircularReferences，那么一个正在被创建的bean才会被放在半成品池子里。在注入bean，向容器获取 bean 的时候，优先向成品池子要，要不到再去向半成品池子要。
+
+不过出现循环依赖一定是设计有问题。高层和底层职责划分不够清晰，一般业务的依赖方向一定是无环的，有环的业务，在后续的维护和拓展一定非常鸡肋。

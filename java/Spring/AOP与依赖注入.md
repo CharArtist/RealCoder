@@ -46,8 +46,6 @@ public class App {
 }
 ```
 
-## Spring启动流程
-
 主应用类使用注解@SpringBootApplication后，在main方法中调用SpringApplication.run方法就可以运行了。相对于以前 Spring 基于 xml 的项目搭建方式要简单很多，那么一切的入口肯定都在 SpringApplication.run 方法中了：
 
 ```java
@@ -256,7 +254,44 @@ protected AutoConfigurationEntry getAutoConfigurationEntry(
 
 Spring AOP 是基于 JDK 动态代理和 Cglib 提升实现的，两种代理方式都属于运行时实现，没有编译时的处理。AspectJ 自己有一个编译器，在编译时期可以修改 .class 文件，在运行时也会进行处理。JDK 的动态代理对被代理的类有要求，被代理类必须实现接口，而对于一些没有实现接口的类，就需要借助 AspectJ 修改字节码来实现 AOP 了。
 
-## 依赖注入
+## 依赖注入方式
 
-在依赖注入中，编程人员不必使用 new 创建对象，只需描述如何创建它们，剩下的 Bean 的装配由 Spring 框架 IOC 容器来完成。
+在依赖注入中，编程人员不必使用 new 创建对象，只需描述如何创建它们，剩下的 Bean 的装配由 Spring 框架 IOC 容器来完成。依赖注入的方式有：变量注入、set 注入、构造器注入。一个简单的 demo：
 
+```java
+@Service
+public class UserServiceImpl implements UserService {
+    @Autowired
+    private UserMapper userMapper; // 变量注入
+}
+
+@Service
+public class UserServiceImpl implements UserService {
+ 
+    private final UserMapper userMapper;
+ 
+    @Autowired
+    public UserServiceImpl(UserMapper userMapper) { // 构造器注入
+        this.userMapper = userMapper;
+    }
+}
+
+@Service
+public class UserServiceImpl implements UserService {
+ 
+    private UserMapper userMapper;
+ 
+    @Autowired
+    public void setUserMapper(UserMapper userMapper) { // set 注入
+        this.userMapper = userMapper;
+    }
+}
+```
+
+几种注入方式的优缺点：
+
+| 注入方式   | 优点                                                         | 缺点                                                         |
+| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 变量注入   | 注入方式简单，没有任何多余代码                               | 注入属性不能用 final 修饰<br />可能会导致循环依赖（如果Spring解决循环依赖配置关闭的话），启动的时候不会报错，在使用 bean 的时候才会报错<br />对于 IOC 容器以外的 bean，除了使用反射来提供它需要的依赖之外，无法完成注入，使用  bean 的时候才会报错 |
+| 构造器注入 | 注入对象可以使用final修饰<br />非IOC容器环境也可使用new实例化该类的对象<br />避免循环依赖，如果存在循环依赖，spring项目启动的时候就会报错 | 当有很多对象需要注入时，构造函数的代码臃肿                   |
+| set 注入   | 依赖可以为 NULL<br />允许类构造完成后重新注入（调用set）     | 注入对象不能使用final修饰                                    |
