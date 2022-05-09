@@ -33,7 +33,7 @@
 
 [类和对象相关](./java/jvm/类和对象相关.md)
 
-[synchronized锁升级过程](./java/jvm/synchronized锁升级过程.md)
+[synchronized锁升级](./java/jvm/synchronized锁升级.md)
 
 ### Spring
 
