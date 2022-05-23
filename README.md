@@ -41,13 +41,25 @@
 
 [synchronized锁升级](./java/jvm/synchronized锁升级.md)
 
-### Spring
+### 后端应用框架
 
-[AOP与依赖注入](./java/Spring/AOP与依赖注入.md)
+[Spring-AOP与依赖注入](./java/后端框架/Spring/AOP与依赖注入.md)
 
-[Bean相关特性](./java/Spring/Bean相关特性.md)
+[Spring-Bean相关特性](./java/后端框架/Spring/Bean相关特性.md)
 
-[SpringMVC](./java/Spring/SpringMVC.md)
+[Spring-SpringMVC](./java/后端框架/Spring/SpringMVC.md)
+
+[ORM-Hibernate](./java/后端框架/ORM框架/Hibernate.md)
+
+[ORM-Mybatis](./java/后端框架/ORM框架/Mybatis.md)
+
+[微服务-Dubbo](./java/后端框架/微服务组件/Dubbo.md)
+
+### IO 框架
+
+[网络IO基础](./java/后端框架/IO框架/网络IO基础.md)
+
+[Netty](./java/后端框架/IO框架/Netty.md)
 
 ## MySQL
 

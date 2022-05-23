@@ -4,7 +4,7 @@
 
 ## SpringMVC请求处理流程
 
-![image-20220508195426627](../../image/image-20220508195426627.png)
+![image-20220508195426627](../../../image/image-20220508195426627.png)
 
 （1）用户发送请求至前端控制器 DispatcherServlet；
 （2）DispatcherServlet 收到请求后，调用 HandlerMapping 处理器映射器，请求获取 Handler；

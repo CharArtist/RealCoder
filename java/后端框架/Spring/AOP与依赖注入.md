@@ -194,7 +194,7 @@ public Iterable<Entry> selectImports() {
 
 其实进入这个方法前 autoConfigurationEntries 其实就已经有内容了，可以看一下 DEBUG 的图，一共有 22 个类。
 
-<img src="../../image/image-20220507123109763.png" alt="image-20220507123109763" style="zoom:50%;" />
+<img src="../../../image/image-20220507123109763.png" alt="image-20220507123109763" style="zoom:50%;" />
 
 那么看一下 autoConfigurationEntries 是什么时候初始化的以及如何初始化的，通过 DEBUG 发现其实是在 process 方法中做的：
 

@@ -8,13 +8,13 @@
 
 在等待数据和内核拷贝数据到用户态的两个阶段，整个应用进程都被阻塞。不能处理别的网络 IO，处于一种不再消耗 CPU 而只是简单等待响应的状态。该过程大致如下图：
 
-<img src="../../image/image-20220523131624027.png" alt="image-20220523131624027" style="zoom:40%;" />
+<img src="../../../image/image-20220523131624027.png" alt="image-20220523131624027" style="zoom:40%;" />
 
 ### 同步非阻塞 IO （Nonblocking IO）
 
 同步非阻塞 IO 是一种 “每隔一会儿瞄一眼” 的轮询（polling）方式。在这种模型中,  recvform 系统调用会先检查数据是否准备好，进程并没有立马被阻塞，内核会马上返回给进程数据是否准备好，如果数据没准备好，会返回未准备好的信号，此时进程可以干别的事情，然后再次发起 recvform 系统调用。重复以上过程，循环往复的进行 recvform 系统调用，这个过程通常被称之为轮询。轮询检查内核数据，直到数据准备好，再拷贝数据到进程，进行数据处理。需要注意，拷贝数据整个过程，进程仍然是属于阻塞的状态。在linux下，可以通过设置 socket 使其变为 non-blocking，对一个 non-blocking socket 执行读操作的流程如下图所示：
 
-<img src="../../image/image-20220523132723194.png" alt="image-20220523132723194" style="zoom:40%;" />
+<img src="../../../image/image-20220523132723194.png" alt="image-20220523132723194" style="zoom:40%;" />
 
 ### IO 多路复用（IO multiplexing）
 
@@ -24,7 +24,7 @@ IO多路复用有两个特别的系统调用 select、poll、epoll 函数。sele
 
 select 或 poll 调用之后，会阻塞进程，与 blocking IO 阻塞不同，select 不是等到 socket 数据全部到达再处理, 而是有了一部分数据就会调用用户进程来处理。但是select也带来了新的问题，就是多个IO之间的顺序变得不确定了，可以针对不同的文件描述符进行不同的操作。该流程如下图所示：
 
-<img src="../../image/image-20220523133806018.png" alt="image-20220523133806018" style="zoom:40%;" />
+<img src="../../../image/image-20220523133806018.png" alt="image-20220523133806018" style="zoom:40%;" />
 
 #### select 、poll 和 epoll 的区别
 
@@ -41,7 +41,7 @@ select 或 poll 调用之后，会阻塞进程，与 blocking IO 阻塞不同，
 
 异步 IO 模型的调用和真正的 IO 过程是异步执行的，用户进程进行 aio_read 系统调用之后，无论内核数据是否准备好，都会直接返回给用户进程，然后用户态进程可以去做别的事情。等到 socket 数据准备好了，内核直接复制数据到进程空间，然后内核向进程发送通知，IO 两个阶段，进程都是非阻塞的，该流程如下图所示：
 
-<img src="../../image/image-20220523134337946.png" alt="image-20220523134337946" style="zoom:40%;" />
+<img src="../../../image/image-20220523134337946.png" alt="image-20220523134337946" style="zoom:40%;" />
 
 ## 零拷贝技术
 
@@ -53,13 +53,13 @@ DMA 即 Direct Memory Access 直接内存访问技术，在没有 DMA 前 IO 的
 - 磁盘控制器收到指令后，于是就开始准备数据，会把数据放入到磁盘控制器的内部缓冲区中，然后产生一个**中断**；
 - CPU 收到中断信号后，停下手头的工作，接着把磁盘控制器的缓冲区的数据一次一个字节地读进自己的寄存器，然后再把寄存器里的数据写入到内存，而在数据传输的期间 CPU 是无法执行其他任务的。
 
-<img src="../../image/image-20220523161917414.png" alt="image-20220523161917414" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523161917414.png" alt="image-20220523161917414" style="zoom:45%;margin-left:0" />
 
 可以看到，整个数据的传输过程，都要需要 CPU 亲自参与搬运数据的过程，而且这个过程，CPU 是不能做其他事情的。简单的搬运几个字符数据那没问题，但是如果用千兆网卡或者硬盘传输大量数据的时候，都用 CPU 来搬运的话，肯定忙不过来。
 
 什么是 DMA 技术？简单理解就是，**在进行 I/O 设备和内存的数据传输的时候，数据搬运的工作全部交给 DMA 控制器，而 CPU 不再参与任何与数据搬运相关的事情，这样 CPU 就可以去处理别的事务**。
 
-<img src="../../image/image-20220523162525005.png" alt="image-20220523162525005" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523162525005.png" alt="image-20220523162525005" style="zoom:45%;margin-left:0" />
 
 具体过程：
 
@@ -75,7 +75,7 @@ DMA 即 Direct Memory Access 直接内存访问技术，在没有 DMA 前 IO 的
 
 首先介绍一个名词：缓存IO。缓存 IO 又被称作标准 IO，大多数文件系统的默认 IO 操作都是缓存 IO。在 Linux 的缓存 IO 机制中，操作系统会将 IO 的数据缓存在文件系统的页缓存（ page cache ）中，也就是说，数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。
 
-<img src="../../image/image-20220523162746411.png" alt="image-20220523162746411" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523162746411.png" alt="image-20220523162746411" style="zoom:45%;margin-left:0" />
 
 **缓存 IO 的缺点：**
 
@@ -117,7 +117,7 @@ write(sockfd, buf, len);
 
 `mmap()` 系统调用函数会直接把内核缓冲区里的数据「**映射**」到用户空间，这样操作系统内核与用户空间就不需要再进行任何的数据拷贝操作。
 
-<img src="../../image/image-20220523165358580.png" alt="image-20220523165358580" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523165358580.png" alt="image-20220523165358580" style="zoom:45%;margin-left:0" />
 
 具体过程如下：
 
@@ -138,7 +138,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count);
 
 它的前两个参数分别是目的端和源端的文件描述符，后面两个参数是源端的偏移量和复制数据的长度，返回值是实际复制数据的长度。首先，它可以替代前面的 `read()` 和 `write()` 这两个系统调用，这样就可以减少一次系统调用，也就**减少了 2 次上下文切换的开销**。其次，该系统调用，可以直接把内核缓冲区里的数据拷贝到 socket 缓冲区里，不再拷贝到用户态，这样就只有 2 次上下文切换，和 3 次数据拷贝。如下图：
 
-<img src="../../image/image-20220523170038874.png" alt="image-20220523170038874" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523170038874.png" alt="image-20220523170038874" style="zoom:45%;margin-left:0" />
 
 但是这还不是真正的零拷贝技术，如果网卡支持 SG-DMA（*The Scatter-Gather Direct Memory Access*）技术（和普通的 DMA 有所不同），我们可以进一步减少通过 CPU 把内核缓冲区里的数据拷贝到 socket 缓冲区的过程。可以在 Linux 系统通过下面这个命令，查看网卡是否支持 scatter-gather 特性：
 
@@ -154,7 +154,7 @@ scatter-gather: on
 
 所以，这个过程之中，只进行了 2 次数据拷贝，如下图：
 
-<img src="../../image/image-20220523172657946.png" alt="image-20220523172657946" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523172657946.png" alt="image-20220523172657946" style="zoom:45%;margin-left:0" />
 
 这就是所谓的**零拷贝（\*Zero-copy\*）技术，因为没有在内存层面去拷贝数据(内存到内存)，也就是说全程没有通过 CPU 来搬运数据，所有的数据都是通过 DMA 来进行传输的。**
 
@@ -179,7 +179,7 @@ scatter-gather: on
 
 缓存 IO 的 PageCache 会对大文件的传输造成负优化，因此需要使用直接 IO，Linux 下的直接 IO 方式只有一种：异步IO，流程如下：
 
-<img src="../../image/image-20220523180931174.png" alt="image-20220523180931174" style="zoom:45%;margin-left:0" />
+<img src="../../../image/image-20220523180931174.png" alt="image-20220523180931174" style="zoom:45%;margin-left:0" />
 
 它把读操作分为两部分：
 
