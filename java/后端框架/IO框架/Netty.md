@@ -188,5 +188,33 @@ public class Client extends Thread {
 }
 ```
 
+### NIO 封装的内存映射 mmap ：MappedByteBuffer
+
+Java NlO 中 的Channel (通道) 就相当于操作系统中的内核缓冲区，有可能是读缓冲区，也有可能是网络缓冲区，而一般的 Buffer 就相当于操作系统中的用户缓冲区。Java NIO 还提供给了 MappedByteBuffer，其底层就是 Linux 的 mmap 系统调用。
+
+MapppedByteBuffer 是 FileChannel 专有的，只能通过调用 FileChannel 的map 方法获取，是一种用于直接将内核态缓冲直接映射到用户态的方式，之前的网络 IO 基础中介绍过，可以减少一次内核态到用户态拷贝，在传输大文件时性能要好很多。
+
+```java
+RandomAccessFile aFile = new RandomAccessFile("/xxx/yyy/zzz","rw");;
+FileChannel fc = aFile.getChannel();
+MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, aFile.length());
+```
+
+使用 MappedByteBuffer类要注意的是：mmap 的文件映射，在 full gc 时才会进行释放。当 close 时，需要手动清除内存映射文件，可以反射调用 sun.misc.Cleaner 方法。
+
+但是如果其后要通过 SocketChannel 发送，还是需要 CPU 进行数据的拷贝（要从内核缓冲区拷贝到 Sokect 缓冲区）。小文件使用 MappedByteBuffer 效率不高，在并发不高的情况下效率也不高。
+
+### NIO 封装的 sedndfile ：transferTo
+
+FileChannel 的 transferTo 方法直接将当前通道内容传输到另一个通道，没有涉及到任何 Buffer 操作，NIO 中 的 Buffer 是 JVM 堆或者堆外内存，但不论如何他们都是操作系统内核空间的内存。 transferTo 方法的实现方式就是通过系统调用 sendfile ，sendfile 减少了两次用户态和内核态的切换，且高版本的 Linux 还可以通过网卡的 SG-DMA 控制器直接将文件从内核缓冲区拷贝到网卡，无需拷贝到 Socket 缓冲区，此过程无需 CPU 参与。
+
+```java
+// 这里其实就是零拷贝的一种实现，但是底层是不是零拷贝还需要看操作系统
+// 操作系统提供 sendfile 零拷贝系统调用，则 transferTo 会通过 sendfile 系统调用实现
+FileChannel sourceChannel = new RandomAccessFile("/xxx/yyy/zzz", "rw").getChannel();
+SocketChannel socketChannel = SocketChannel.open(socketAddress);
+sourceChannel.transferTo(0, sourceChannel.size(), socketChannel);
+```
+
 ## Netty
 
