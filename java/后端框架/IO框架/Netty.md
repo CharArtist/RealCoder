@@ -216,5 +216,112 @@ SocketChannel socketChannel = SocketChannel.open(socketAddress);
 sourceChannel.transferTo(0, sourceChannel.size(), socketChannel);
 ```
 
+## Reactor 模型
+
+I/O 多路复用 + 线程池就是 Reactor 模式的基本设计思想。线程池+BIO的方式存在的问题是连接数较大时，线程切换带来的开销会导致处理 IO 的效率变得很慢， I/O 多路复用让单线程就可以监听处理所有的 fd ，但是对于多核 CPU 来说，这不利于充分利用 CPU 资源，因此可以开辟专用的线程池用于 I/O 处理，一个线程负责多个 fd 的读写事件。这就是工程的艺术，amazing。
+
+### 单 Reactor 单线程
+
+<img src="/Users/xuping/Library/Application Support/typora-user-images/image-20220530220500107.png" alt="image-20220530220500107" style="zoom:50%;margin-left:0" />
+
+### 单 Reactor 多线程
+
+<img src="/Users/xuping/Library/Application Support/typora-user-images/image-20220530220550110.png" alt="image-20220530220550110" style="zoom:50%;margin-left:0" />
+
+### 多 Reactor 多线程
+
+<img src="/Users/xuping/Library/Application Support/typora-user-images/image-20220530220628284.png" alt="image-20220530220628284" style="zoom:50%;margin-left:0" />
+
+## Proactor 模型
+
+<img src="/Users/xuping/Library/Application Support/typora-user-images/image-20220530220804443.png" alt="image-20220530220804443" style="zoom:50%;margin-left:0" />
+
+* 可惜的是，在 Linux 下的异步 I/O 是不完善的， `aio` 系列函数是由 POSIX 定义的异步操作接口，不是真正的操作系统级别支持的，而是在用户空间模拟出来的异步，并且仅仅支持基于本地文件的 aio 异步操作，网络编程中的 socket 是不支持的，这也使得基于 Linux 的高性能网络程序都是使用 Reactor 方案。
+
+* 而 Windows 里实现了一套完整的支持 socket 的异步编程接口，这套接口就是 `IOCP`，是由操作系统级别实现的异步 I/O，真正意义上异步 I/O，因此在 Windows 里实现高性能网络程序可以使用效率更高的 Proactor 方案。
+
 ## Netty
+
+Netty 是一个客户端、服务端 NIO 框架，提供异步的、事件驱动的网络 IO 工具，允许快速简单的开发网络应用程序，简化了网络编程模型。
+
+简单的 Server 端 demo（从官网摘抄过来的，英文直接翻译为中文，英文的逻辑表达比很多中文博客都要简洁清晰）：
+
+```java
+public class NettyServer {
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+        new Server(port).run();
+    }
+
+    static class Server {
+        private int port;
+        public Server(int port) {
+            this.port = port;
+    }
+
+      public void run() throws Exception {
+        // NioEventLoopGroup 是一个处理 I/O 操作的多线程事件循环，Netty 为不同类型的传输提供了各种 EventLoopGroup 实现
+        // 在这个例子中，我们正在实现一个服务器端应用程序，因此将使用两个 NioEventLoopGroup
+        // 第一个，通常称为“boss”，接受传入连接；第二个，通常称为“worker”，作为工作人员
+        // 一旦老板接受连接并将接受的连接注册到工作人员，工作人员就会处理接受的连接的流量
+        // 使用多少线程以及它们如何映射到创建的通道取决于 EventLoopGroup 实现，可以通过构造函数进行配置
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+          // ServerBootstrap 是一个设置服务器的辅助类
+          // 您可以直接使用 Channel 设置服务器。但是，请注意，这是一个乏味的过程，在大多数情况下您不需要这样做
+          ServerBootstrap b = new ServerBootstrap();
+          b.group(bossGroup, workerGroup)
+            // 在这里，我们指定使用 NioServerSocketChannel 类来实例化一个新的 Channel 来接受传入的连接。
+            .channel(NioServerSocketChannel.class) 
+            // 此处指定的处理程序将始终由新接受的 Channel 评估
+            // ChannelInitializer 是一个特殊的处理程序，旨在帮助用户配置新的 Channel
+            // 您很可能希望通过添加一些处理程序（例如 DiscardServerHandler）来配置新 Channel 的 ChannelPipeline 来实现您的网络应用程序。随着应用程序变得复杂，您可能会向管道添加更多处理程序，并最终将这个匿名类提取到顶级类中
+            .childHandler(new ChannelInitializer<SocketChannel>() {
+              @Override
+              protected void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast(new DiscardServerHandler());
+              }
+            })
+            // 您还可以设置特定于 Channel 实现的参数。我们正在编写一个 TCP/IP 服务器，因此我们可以设置套接字选项，例如 tcpNoDelay 和 keepAlive。请参阅 ChannelOption 的 apidocs 和具体的 ChannelConfig 实现，以了解有关支持的 ChannelOptions 的概述。
+            .option(ChannelOption.SO_BACKLOG, 128)
+            // 你注意到 option() 和 childOption() 了吗？ option() 用于接受传入连接的 NioServerSocketChannel。 childOption() 用于父 ServerChannel 接受的 Channels，在本例中为 NioSocketChannel。
+            .childOption(ChannelOption.SO_KEEPALIVE, true);
+          // 我们现在准备出发。剩下的就是绑定到端口并启动服务器。这里，我们绑定到本机所有网卡（网卡）的8080端口。您现在可以根据需要多次调用 bind() 方法（使用不同的绑定地址。）
+          ChannelFuture f = b.bind(port).sync();
+          // 等待服务器套接字关闭。在此示例中，这不会发生，但您可以这样做以正常关闭服务器。
+          f.channel().closeFuture().sync();
+        } finally {
+          workerGroup.shutdownGracefully();
+          bossGroup.shutdownGracefully();
+        }
+      }
+    }
+
+  	// DiscardServerHandler 扩展了 ChannelInboundHandlerAdapter，它是 ChannelInboundHandler 的一个实现。 ChannelInboundHandler 提供了可以覆盖的各种事件处理程序方法。目前，扩展 ChannelInboundHandlerAdapter 就足够了，而不是自己实现处理程序接口。
+    static class DiscardServerHandler extends ChannelInboundHandlerAdapter{
+      	// 我们在这里覆盖了 channelRead() 事件处理方法。每当从客户端接收到新数据时，都会使用接收到的消息调用此方法。在本例中，接收到的消息类型为 ByteBuf。
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ByteBuf in = (ByteBuf) msg;
+            try {
+                while (in.isReadable()) {
+                    System.out.print((char) in.readByte()); // 打印一下接受到的消息，别的什么都不做
+                    System.out.flush();
+                }
+            } finally {
+              	// ByteBuf 是一个引用计数对象，必须通过 release() 方法显式释放。请记住，释放任何传递给处理程序的引用计数对象是处理程序的责任。通常，channelRead() 中会这样做
+                ReferenceCountUtil.release(msg);
+            }
+        }
+				// 当 Netty 由于 I/O 错误或由于处理事件时抛出的异常时，使用 Throwable 调用 exceptionCaught() 事件处理程序方法。在大多数情况下，应记录捕获的异常并在此处关闭其关联的 Channel，尽管此方法的实现可能会有所不同，具体取决于您要如何处理异常情况。例如，您可能希望在关闭连接之前发送带有错误代码的响应消息。
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+            cause.printStackTrace();
+            ctx.close();
+        }
+    }
+}
+```
 
